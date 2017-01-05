@@ -1,10 +1,10 @@
 #!/usr/bin/env python2
 # -*- coding: utf-8 -*-
 """
-Created on Wed Dec  7 16:34:57 2016
-
-@author: kasperipalkama
-"""
+    Created on Wed Dec  7 16:34:57 2016
+    
+    @author: kasperipalkama
+    """
 
 import numpy as np
 import networkx as nx
@@ -18,7 +18,7 @@ from scipy.stats import spearmanr
 def initialize_nodes(net,first_infected,task_number = 0):
     infection_times = np.zeros(net.number_of_nodes())
     for index,node in enumerate(net.nodes()):
-#        print index, node
+        #        print index, node
         if int(node) == first_infected:
             nodeIdx = np.argwhere(event_data['Source'] == int(node))[0][0]
             if task_number == 6:
@@ -38,9 +38,6 @@ def refresh_infections(infection_times,source,destination,startTime,endTime,prob
                     infection_times[destination] = endTime
                     if task_number == 6:
                         infection_spreaders[destination] = source
-    for index,time in enumerate(infection_times):
-        if time + 86400 <= time:
-            infection_times[index] = np.Inf
     if task_number == 6:
         return infection_spreaders
     else:
@@ -76,7 +73,7 @@ def get_median_infection_time(infection_time_matrix, minValueCount):
         if len(node_times[node_times != np.inf]) > minValueCount:
             median_infection_time[index] = np.median(node_times)
     return median_infection_time
-    
+
 def get_network_measures(network):
     degree_dict = nx.degree(network)
     clustering_coef_dict = nx.clustering(network)
@@ -87,7 +84,7 @@ def get_network_measures(network):
     
     nodeCount = network.number_of_nodes()
     kshell = np.empty(nodeCount)
-    clustering_coef = np.empty(nodeCount) 
+    clustering_coef = np.empty(nodeCount)
     degree = np.empty(nodeCount)
     strength = np.empty(nodeCount)
     betweenness = np.empty(nodeCount)
@@ -114,11 +111,11 @@ def visualize(y,x,xlabel,ylabel,mark,task_number,title = '',label = ''):
     ax.set_title(title)
     if task_number == 5:
         ax.legend(loc='best',fontsize=10,fancybox=True).get_frame().set_alpha(0.5)
-    
+
 
 def get_immunized_nodes(network,immunization_strategies,nodeCount,measures):
     immunized_nodes_matrix = []
-    for immunization_strategy in immunization_strategies:   
+    for immunization_strategy in immunization_strategies:
         immunized_nodes = []
         if immunization_strategy == 'rand_node':
             immunized_nodes = random.sample(range(network.number_of_nodes()), nodeCount)
@@ -156,10 +153,10 @@ def get_immunized_nodes(network,immunization_strategies,nodeCount,measures):
             for index in range(nodeCount):
                 maxIndex = np.argmax(measures[5])
                 measures[5][maxIndex] = 0
-                immunized_nodes.append(maxIndex)   
+                immunized_nodes.append(maxIndex)
         immunized_nodes_matrix.append(immunized_nodes)
     return immunized_nodes_matrix
-    
+
 def get_seed_nodes(network,immunized_nodes,numer_of_seed_nodes):
     seedNodes = []
     for index in range(numer_of_seed_nodes):
@@ -168,7 +165,7 @@ def get_seed_nodes(network,immunized_nodes,numer_of_seed_nodes):
             random_node = int(random.sample(network.nodes(),1)[0])
         seedNodes.append(random_node)
     return seedNodes
-    
+
 def get_link_infecting_frequency(network,infection_spreaders_matrix):
     fij = np.zeros(network.number_of_edges())
     infection_spreaders_matrix = np.array(infection_spreaders_matrix)
@@ -185,9 +182,9 @@ def get_link_infecting_frequency(network,infection_spreaders_matrix):
                 linkCount2 = infections.count(startNode)
         fij[index] = linkCount1/n
         fij[index] += linkCount2/n
-        
-    return list(fij)
     
+    return list(fij)
+
 def visualize_links(network,linkwidths = None):
     xycoords = np.loadtxt('US_airport_id_info.csv',skiprows=1,delimiter=',',usecols=(6,7))
     nodes = network.nodes()
@@ -211,7 +208,7 @@ def get_link_weigth(network):
     for (i,j,data) in network.edges(data = True):
         weights.append(data['weight'])
     return weights
-    
+
 def get_link_overlap(network):
     overlaps = []
     for (i,j,data) in network.edges(data = True):
@@ -223,7 +220,7 @@ def get_link_overlap(network):
         else:
             overlaps.append(n_ij/float(k_i - 1 + k_j - 1 + n_ij))
     return overlaps
-    
+
 def get_edge_betweennes_centrality_as_list(network):
     edge_betweennes_dict = nx.edge_betweenness_centrality(network)
     edge_betweennes = []
@@ -231,9 +228,24 @@ def get_edge_betweennes_centrality_as_list(network):
         edge_betweennes.append(edge_betweennes_dict[edge])
     return edge_betweennes
 
+def get_bonus_measure1(network):
+    bonus = []
+    edge_betweennes = get_edge_betweennes_centrality_as_list(network)
+    weights = get_link_weigth(network)
+    for index,edge in enumerate(network.edges()):
+        bonus.append(weights[index]*edge_betweennes[index])
+    return bonus
 
-        
-    
+def get_bonus_measure2(network):
+    bonus = []
+    edge_betweennes = get_edge_betweennes_centrality_as_list(network)
+    weights = get_link_weigth(network)
+    for index,edge in enumerate(network.edges()):
+        smaller_node_degree = max(1/float(nx.degree(network,edge[0])),1/float(nx.degree(network,edge[1])))
+        bonus.append(weights[index]*smaller_node_degree*edge_betweennes[index])
+    return bonus
+
+
 def Task1(event_data,network):
     seedNode = 0
     prob = 1.0
@@ -241,7 +253,6 @@ def Task1(event_data,network):
     for source,destination,startTime,endTime,duration in zip(event_data['Source'],event_data['Destination'],event_data['StartTime'],event_data['EndTime'],event_data['Duration']):
         infection_times = refresh_infections(infection_times,source,destination,startTime,endTime,probability_for_infection = prob)
     print infection_times[41]
-    si_animator.visualize_si(infection_times, fps=20, tot_viz_time_in_seconds=20)
 
 def Task2and3(event_data,network,task_number):
     if task_number == 2:
@@ -300,10 +311,10 @@ def Task5(event_data, network):
     n = 20
     wb = progressbar.ProgressBar(maxval=8)
     immunization_strategies = ['rand_node_neighbor','rand_node','kshell','c','k','s','bc','cc']
-    immunized_nodes_matrix = get_immunized_nodes(network=network,immunization_strategies=immunization_strategies,nodeCount=10,measures=meausures)    
+    immunized_nodes_matrix = get_immunized_nodes(network=network,immunization_strategies=immunization_strategies,nodeCount=10,measures=meausures)
     seedNodes = get_seed_nodes(network=network,immunized_nodes=immunized_nodes_matrix,numer_of_seed_nodes=n)
     for i,immunized_nodes in enumerate(immunized_nodes_matrix):
-#        print immunized_nodes
+        #        print immunized_nodes
         wb.start()
         simulationStartTime = event_data['StartTime'][0]
         simulationEndTime = max(event_data['EndTime'])
@@ -317,7 +328,7 @@ def Task5(event_data, network):
         visualize(np.mean(fractionInfectedMatrix,axis = 1),time, xlabel='time',ylabel = 'fraction infected',mark = '-',label=immunization_strategies[i],task_number = 5)
         wb.update(i+1)
     wb.finish()
-    
+
 def Task6(event_data, network):
     prob = 0.5
     n = 20
@@ -343,15 +354,20 @@ def Task6(event_data, network):
     overlaps = get_link_overlap(network)
     edge_betweennes = get_edge_betweennes_centrality_as_list(network)
     links_measures = [weights, overlaps, edge_betweennes]
-    xlabels = ['weigth', 'link neighborhood overlap', 'unweighted edge betweennes centrality']    
+    xlabels = ['weigth', 'link neighborhood overlap', 'unweighted edge betweennes centrality']
     for link_measure,xlabel in zip(links_measures,xlabels):
         visualize(y=fij,x=link_measure,xlabel=xlabel,ylabel='fij',mark='o',task_number=6)
         corr,_ = spearmanr(fij,link_measure)
         print 'Spearman corr(fij,',xlabel,') = ',corr
-    
-    
-   
-        
+    bonus1 = get_bonus_measure1(network)
+    bonus2 = get_bonus_measure2(network)
+    corrbonus1,_ = spearmanr(fij,bonus1)
+    corrbonus2,_ = spearmanr(fij,bonus2)
+    print 'bonus1 corr:', corrbonus1,'\n bonus2 corr:',corrbonus2
+
+
+
+
 if __name__ == "__main__":
     event_data = np.genfromtxt('events_US_air_traffic_GMT.txt', names = True, dtype=int)
     event_data.sort(order=['StartTime'])
@@ -361,4 +377,3 @@ if __name__ == "__main__":
     Task4(event_data,network)
     Task5(event_data,network)
     Task6(event_data, network)
-    
