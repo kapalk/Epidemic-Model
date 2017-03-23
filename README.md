@@ -1,8 +1,8 @@
-## Epidemic-model
+# Epidemic-model
     
 Modelling spread of epidemic.
 
-# Following things were studied:
+## Following things were studied:
     - Effects of infection probability
     - Effect of seed node
     - Node centrality
